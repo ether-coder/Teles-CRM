@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TELES REAL STATE — CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #181c24;
+  --border: #1e2430;
+  --accent: #c9a84c;
+  --accent2: #e8c76a;
+  --green: #2ecc71;
+  --red: #e74c3c;
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --card-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Syne',sans-serif}
+
+/* LAYOUT */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:.3s}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo h1{font-size:14px;font-weight:800;letter-spacing:2px;color:var(--accent);text-transform:uppercase}
+.sidebar-logo p{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+.nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:13px;color:var(--muted);border-left:2px solid transparent;transition:.2s;user-select:none}
+.nav-item:hover{color:var(--text);background:rgba(201,168,76,0.06)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(201,168,76,0.08);font-weight:600}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.main{flex:1;overflow-y:auto;background:var(--bg)}
+.topbar{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);position:sticky;top:0;z-index:10}
+.topbar-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:.5px}
+.topbar-right{display:flex;gap:10px;align-items:center}
+.badge{background:var(--accent);color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:1px}
+.content{padding:20px 24px}
+
+/* CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;transition:.2s}
+.card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.card-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.card-value{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--text)}
+.card-sub{font-size:11px;color:var(--accent);margin-top:4px}
+.card-pct{font-size:12px;color:var(--green);margin-top:4px}
+
+/* SECTION */
+.section-title{font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.chart-box.full{grid-column:1/-1}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.chart-period{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.period-btn{padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:.2s}
+.period-btn.active,.period-btn:hover{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+canvas{max-height:220px}
+
+/* TABLE */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.table-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-header h3{font-size:13px;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:10px 14px;color:var(--muted);font-size:11px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2)}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(201,168,76,0.04)}
+
+/* STATUS BADGES */
+.status{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.5px}
+.status-0{background:rgba(107,114,128,0.2);color:#9ca3af}
+.status-1{background:rgba(59,130,246,0.2);color:#60a5fa}
+.status-2{background:rgba(139,92,246,0.2);color:#a78bfa}
+.status-3{background:rgba(46,204,113,0.2);color:#4ade80}
+
+/* FUNNEL CARDS */
+.funnel{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.funnel-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;transition:.2s}
+.funnel-card:hover,.funnel-card.active-funnel{border-color:var(--accent)}
+.funnel-card .fc-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800}
+.funnel-card .fc-label{font-size:10px;color:var(--muted);letter-spacing:.5px;margin-top:4px;text-transform:uppercase}
+.funnel-card .fc-pct{font-size:11px;color:var(--accent);margin-top:4px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:.2s}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{background:var(--accent2)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(231,76,60,0.15);color:var(--red);border:1px solid rgba(231,76,60,0.3)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-size:15px;font-weight:700}
+.modal-close{background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+.modal-body{padding:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:.2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group select option{background:var(--surface2)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.checkbox-row{display:flex;align-items:center;gap:8px;font-size:13px}
+.checkbox-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+
+/* CALCULATOR */
+.calc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;max-width:300px}
+.calc-display{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;text-align:right;margin-bottom:12px}
+.calc-expr{font-size:11px;color:var(--muted);min-height:16px}
+.calc-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:700;word-break:break-all}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.calc-btn{padding:12px 0;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:.15s;background:var(--surface2);color:var(--text)}
+.calc-btn:hover{background:var(--border)}
+.calc-btn.op{background:rgba(201,168,76,0.15);color:var(--accent)}
+.calc-btn.eq{background:var(--accent);color:#000;grid-column:span 2}
+.calc-btn.ac{background:rgba(231,76,60,0.15);color:var(--red)}
+.calc-btn.pct{background:rgba(59,130,246,0.15);color:var(--blue)}
+
+/* PAGE TABS */
+.page{display:none}
+.page.active{display:block}
+
+/* EMPREENDIMENTO CARDS */
+.emp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.emp-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;transition:.2s}
+.emp-card:hover{border-color:var(--accent)}
+.emp-name{font-size:15px;font-weight:700;margin-bottom:4px}
+.emp-const{font-size:11px;color:var(--accent);letter-spacing:.5px;margin-bottom:10px}
+.emp-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
+.emp-row:last-child{border:none}
+.emp-key{color:var(--muted)}
+.progress-bar{background:var(--surface2);border-radius:4px;height:6px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:.5s}
+.emp-tag{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;margin-top:8px}
+.emp-tag.assinando{background:rgba(46,204,113,0.2);color:var(--green)}
+.emp-tag.nao{background:rgba(107,114,128,0.2);color:var(--muted)}
+
+/* SCRIPTS */
+.script-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.script-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px;margin-bottom:8px}
+.script-tag.abordagem{background:rgba(59,130,246,0.2);color:#60a5fa}
+.script-tag.qualificacao{background:rgba(139,92,246,0.2);color:#a78bfa}
+.script-tag.fechamento{background:rgba(46,204,113,0.2);color:#4ade80}
+.script-tag.objecao{background:rgba(231,76,60,0.2);color:#f87171}
+.script-text{font-size:13px;line-height:1.6;color:var(--text);white-space:pre-wrap}
+
+/* META CARDS */
+.meta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.meta-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+.meta-label{font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.meta-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:700}
+.meta-input{margin-top:6px}
+.meta-progress{margin-top:8px}
+
+/* PERIOD PICKER */
+.period-custom{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.period-custom input[type=date]{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none}
+.period-custom input[type=date]:focus{border-color:var(--accent)}
+
+/* PROJECAO TABLE */
+.proj-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;align-items:center}
+.proj-row.header{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
+
+/* MOBILE NAV */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:20;padding:6px 0 10px}
+.mobile-nav-inner{display:flex;justify-content:space-around}
+.mn-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:9px;letter-spacing:.5px;transition:.2s}
+.mn-item.active{color:var(--accent)}
+.mn-item svg{width:20px;height:20px}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .mobile-nav{display:block}
+  .main{padding-bottom:70px}
+  .cards-grid{grid-template-columns:1fr 1fr}
+  .charts-row{grid-template-columns:1fr}
+  .funnel{grid-template-columns:1fr 1fr}
+  .form-row{grid-template-columns:1fr}
+  .content{padding:14px 16px}
+  .topbar{padding:12px 16px}
+  .proj-row{grid-template-columns:2fr 1fr 1fr}
+}
+@media(max-width:480px){
+  .cards-grid{grid-template-columns:1fr}
+  .funnel{grid-template-columns:1fr 1fr}
+}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#000;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:200;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SCROLL */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.empty-state{text-align:center;padding:40px;color:var(--muted)}
+.empty-state svg{width:40px;height:40px;margin:0 auto 12px;opacity:.3;display:block}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>TELES</h1>
+      <p>REAL STATE · CRM</p>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="gotoPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="gotoPage('leads')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Leads
+      </div>
+      <div class="nav-item" onclick="gotoPage('funil')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Funil
+      </div>
+      <div class="nav-item" onclick="gotoPage('projecao')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>
+        Projeção
+      </div>
+      <div class="nav-item" onclick="gotoPage('empreendimentos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Empreendimentos
+      </div>
+      <div class="nav-item" onclick="gotoPage('scripts')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Scripts e Metas
+      </div>
+      <div class="nav-item" onclick="gotoPage('calc')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="11" y2="17"/></svg>
+        Calculadora
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <span class="badge">MCMV</span>
+        <button class="btn btn-primary" onclick="openGlobalComm()">⚙ Comissão Global</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div class="page active" id="page-dashboard">
+
+        <div class="section-title">Visão Geral · <span id="dash-date"></span></div>
+
+        <!-- KPI CARDS -->
+        <div class="cards-grid">
+          <div class="card">
+            <div class="card-label">VGV Total</div>
+            <div class="card-value" id="kpi-vgv">R$ 0</div>
+            <div class="card-sub">Leads ativos</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Comissão Proj.</div>
+            <div class="card-value" id="kpi-comm">R$ 0</div>
+            <div class="card-sub" id="kpi-comm-pct">0% do VGV</div>
+          </div>
+          <div class="card">
+            <div class="card-label">ITBI Total</div>
+            <div class="card-value" id="kpi-itbi">R$ 0</div>
+            <div class="card-sub">Estimado clientes</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Cartório Total</div>
+            <div class="card-value" id="kpi-cart">R$ 0</div>
+            <div class="card-sub">Estimado clientes</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Entrada Total</div>
+            <div class="card-value" id="kpi-entrada">R$ 0</div>
+            <div class="card-sub">Estimado clientes</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Enc. de Obras</div>
+            <div class="card-value" id="kpi-enc">R$ 0</div>
+            <div class="card-sub">Estimado clientes</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Abertura Conta</div>
+            <div class="card-value" id="kpi-aber">R$ 0</div>
+            <div class="card-sub">Estimado clientes</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Vendas (Assinados)</div>
+            <div class="card-value" id="kpi-vendas">R$ 0</div>
+            <div class="card-pct" id="kpi-vendas-count">0 contratos</div>
+          </div>
+        </div>
+
+        <!-- CHARTS ROW 1 -->
+        <div class="charts-row">
+          <div class="chart-box">
+            <div class="chart-title">Distribuição de Leads por Status</div>
+            <canvas id="chartPizza"></canvas>
+          </div>
+          <div class="chart-box">
+            <div class="chart-title">Taxas por Cliente (Top 8)</div>
+            <canvas id="chartBarras"></canvas>
+          </div>
+        </div>
+
+        <!-- VGV EVOLUÇÃO -->
+        <div class="chart-box full" style="margin-bottom:14px">
+          <div class="chart-title">Evolução do VGV</div>
+          <div class="chart-period">
+            <button class="period-btn active" onclick="setVGVPeriod('1m',this)">1 Mês</button>
+            <button class="period-btn" onclick="setVGVPeriod('3m',this)">3 Meses</button>
+            <button class="period-btn" onclick="setVGVPeriod('6m',this)">6 Meses</button>
+            <button class="period-btn" onclick="setVGVPeriod('1a',this)">1 Ano</button>
+            <button class="period-btn" onclick="setVGVPeriod('custom',this)">Personalizado</button>
+          </div>
+          <div class="period-custom" id="vgv-custom-dates" style="display:none">
+            <input type="date" id="vgv-date-start"> até <input type="date" id="vgv-date-end">
+            <button class="btn btn-primary" style="padding:5px 12px;font-size:11px" onclick="applyVGVCustom()">Aplicar</button>
+          </div>
+          <canvas id="chartVGV"></canvas>
+        </div>
+
+        <!-- GANHOS EVOLUÇÃO -->
+        <div class="chart-box full" style="margin-bottom:14px">
+          <div class="chart-title">Evolução de Ganhos (Vendas Fechadas)</div>
+          <div class="chart-period">
+            <button class="period-btn active" onclick="setGainPeriod('1m',this)">1 Mês</button>
+            <button class="period-btn" onclick="setGainPeriod('3m',this)">3 Meses</button>
+            <button class="period-btn" onclick="setGainPeriod('6m',this)">6 Meses</button>
+            <button class="period-btn" onclick="setGainPeriod('1a',this)">1 Ano</button>
+            <button class="period-btn" onclick="setGainPeriod('custom',this)">Personalizado</button>
+          </div>
+          <div class="period-custom" id="gain-custom-dates" style="display:none">
+            <input type="date" id="gain-date-start"> até <input type="date" id="gain-date-end">
+            <button class="btn btn-primary" style="padding:5px 12px;font-size:11px" onclick="applyGainCustom()">Aplicar</button>
+          </div>
+          <canvas id="chartGanhos"></canvas>
+        </div>
+
+      </div>
+
+      <!-- ===== LEADS ===== -->
+      <div class="page" id="page-leads">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-title" style="margin:0;flex:1">Base de Leads</div>
+          <button class="btn btn-primary" onclick="openLeadModal()">+ Novo Lead</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-header">
+            <h3>Todos os Leads</h3>
+            <input style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;width:180px" placeholder="🔍 Buscar..." oninput="filterLeads(this.value)" id="lead-search">
+          </div>
+          <div style="overflow-x:auto">
+            <table id="leads-table">
+              <thead><tr>
+                <th>Nome</th><th>Telefone</th><th>E-mail</th><th>Empreendimento</th><th>Valor Imóvel</th><th>Status</th><th>Ações</th>
+              </tr></thead>
+              <tbody id="leads-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== FUNIL ===== -->
+      <div class="page" id="page-funil">
+        <div class="section-title">Funil de Atendimento</div>
+
+        <div class="funnel" id="funnel-cards">
+          <div class="funnel-card active-funnel" onclick="filterFunil(0)">
+            <div class="fc-num" id="fn-0" style="color:#9ca3af">0</div>
+            <div class="fc-label">Atendimento Inicial</div>
+            <div class="fc-pct" id="fp-0">0%</div>
+          </div>
+          <div class="funnel-card" onclick="filterFunil(1)">
+            <div class="fc-num" id="fn-1" style="color:#60a5fa">0</div>
+            <div class="fc-label">Mandou Documentos</div>
+            <div class="fc-pct" id="fp-1">0%</div>
+          </div>
+          <div class="funnel-card" onclick="filterFunil(2)">
+            <div class="fc-num" id="fn-2" style="color:#a78bfa">0</div>
+            <div class="fc-label">Foi Aprovado</div>
+            <div class="fc-pct" id="fp-2">0%</div>
+          </div>
+          <div class="funnel-card" onclick="filterFunil(3)">
+            <div class="fc-num" id="fn-3" style="color:#4ade80">0</div>
+            <div class="fc-label">Assinou na Caixa</div>
+            <div class="fc-pct" id="fp-3">0%</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)">
+          <span>📅 Hoje: <b id="funil-hoje" style="color:var(--text)">0</b></span>
+          <span>📅 Semana: <b id="funil-semana" style="color:var(--text)">0</b></span>
+          <span>📅 Mês: <b id="funil-mes" style="color:var(--text)">0</b></span>
+          <span>📅 3 Meses: <b id="funil-3m" style="color:var(--text)">0</b></span>
+          <span>📅 6 Meses: <b id="funil-6m" style="color:var(--text)">0</b></span>
+          <span>📅 1 Ano: <b id="funil-1a" style="color:var(--text)">0</b></span>
+          <span>📋 Total Base: <b id="funil-total" style="color:var(--accent)">0</b></span>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-header"><h3 id="funil-table-title">Todos os Leads</h3></div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Nome</th><th>Empreendimento</th><th>Valor</th><th>Status</th><th>Data Entrada</th><th>Ação</th></tr></thead>
+              <tbody id="funil-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PROJEÇÃO ===== -->
+      <div class="page" id="page-projecao">
+        <div class="section-title">Projeção de Comissão por Lead</div>
+
+        <div class="cards-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+          <div class="card">
+            <div class="card-label">Comissão Projetada</div>
+            <div class="card-value" id="proj-total">R$ 0</div>
+            <div class="card-sub">Todos os leads ativos</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Comissão Confirmada</div>
+            <div class="card-value" id="proj-confirmada">R$ 0</div>
+            <div class="card-sub">Assinados na Caixa</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Taxa Média</div>
+            <div class="card-value" id="proj-media">0%</div>
+            <div class="card-sub">Comissão média</div>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:16px">
+          <div class="table-header"><h3>Projeção por Cliente</h3></div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Cliente</th><th>Empreendimento</th><th>Valor Imóvel</th><th>% Comissão</th><th>Comissão Proj.</th><th>Status</th></tr></thead>
+              <tbody id="proj-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EMPREENDIMENTOS ===== -->
+      <div class="page" id="page-empreendimentos">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-title" style="margin:0;flex:1">Empreendimentos</div>
+          <button class="btn btn-primary" onclick="openEmpModal()">+ Adicionar</button>
+        </div>
+        <div class="emp-grid" id="emp-grid">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <p>Nenhum empreendimento cadastrado.<br>Clique em <b>+ Adicionar</b> para começar.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SCRIPTS E METAS ===== -->
+      <div class="page" id="page-scripts">
+        <div class="section-title">Metas</div>
+
+        <div class="meta-grid">
+          <div class="meta-card">
+            <div class="meta-label">Meta Mensal (R$)</div>
+            <div class="meta-input">
+              <input class="form-group input" id="meta-mensal" type="number" placeholder="Ex: 10000" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none" oninput="saveMetas()">
+            </div>
+            <div class="meta-progress">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Realizado: <span id="meta-realizado">R$ 0</span></div>
+              <div class="progress-bar"><div class="progress-fill" id="meta-bar" style="width:0%"></div></div>
+              <div style="font-size:11px;color:var(--accent);margin-top:4px" id="meta-pct-label">0%</div>
+            </div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">Meta de Contatos/Mês</div>
+            <div class="meta-input">
+              <input id="meta-contatos" type="number" placeholder="Ex: 30" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none" oninput="saveMetas()">
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">Total na base: <b id="meta-total-leads" style="color:var(--text)">0</b></div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">Meta de Vendas/Mês</div>
+            <div class="meta-input">
+              <input id="meta-vendas" type="number" placeholder="Ex: 3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none" oninput="saveMetas()">
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">Vendas no mês: <b id="meta-vendas-real" style="color:var(--text)">0</b></div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">% Comissão Global</div>
+            <div class="meta-input">
+              <input id="meta-comm-global" type="number" step="0.1" placeholder="Ex: 1.5" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none" oninput="setGlobalComm(this.value)">
+            </div>
+            <div style="font-size:11px;color:var(--accent);margin-top:6px">Usada como padrão nos leads</div>
+          </div>
+        </div>
+
+        <div class="section-title">Scripts de Atendimento</div>
+
+        <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="openScriptModal()">+ Novo Script</button>
+        </div>
+
+        <div id="scripts-list">
+          <!-- scripts padrão -->
+        </div>
+      </div>
+
+      <!-- ===== CALCULADORA ===== -->
+      <div class="page" id="page-calc">
+        <div class="section-title">Calculadora</div>
+        <div style="display:flex;justify-content:center;padding:20px 0">
+          <div class="calc">
+            <div class="calc-display">
+              <div class="calc-expr" id="calc-expr"></div>
+              <div class="calc-val" id="calc-val">0</div>
+            </div>
+            <div class="calc-grid">
+              <button class="calc-btn ac" onclick="calcAC()">AC</button>
+              <button class="calc-btn op" onclick="calcToggle()">+/-</button>
+              <button class="calc-btn pct" onclick="calcPct()">%</button>
+              <button class="calc-btn op" onclick="calcOp('/')">÷</button>
+              <button class="calc-btn" onclick="calcNum('7')">7</button>
+              <button class="calc-btn" onclick="calcNum('8')">8</button>
+              <button class="calc-btn" onclick="calcNum('9')">9</button>
+              <button class="calc-btn op" onclick="calcOp('*')">×</button>
+              <button class="calc-btn" onclick="calcNum('4')">4</button>
+              <button class="calc-btn" onclick="calcNum('5')">5</button>
+              <button class="calc-btn" onclick="calcNum('6')">6</button>
+              <button class="calc-btn op" onclick="calcOp('-')">−</button>
+              <button class="calc-btn" onclick="calcNum('1')">1</button>
+              <button class="calc-btn" onclick="calcNum('2')">2</button>
+              <button class="calc-btn" onclick="calcNum('3')">3</button>
+              <button class="calc-btn op" onclick="calcOp('+')">+</button>
+              <button class="calc-btn" style="grid-column:span 2" onclick="calcNum('0')">0</button>
+              <button class="calc-btn" onclick="calcDot()">.</button>
+              <button class="calc-btn eq" onclick="calcEq()">=</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <div class="mn-item active" onclick="gotoPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      DASH
+    </div>
+    <div class="mn-item" onclick="gotoPage('leads')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      LEADS
+    </div>
+    <div class="mn-item" onclick="gotoPage('funil')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      FUNIL
+    </div>
+    <div class="mn-item" onclick="gotoPage('empreendimentos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      EMP.
+    </div>
+    <div class="mn-item" onclick="gotoPage('scripts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      METAS
+    </div>
+    <div class="mn-item" onclick="gotoPage('calc')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/></svg>
+      CALC
+    </div>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL COMISSÃO GLOBAL -->
+<div class="modal-overlay" id="modal-comm">
+  <div class="modal">
+    <div class="modal-head"><h3>⚙ Comissão Global</h3><button class="modal-close" onclick="closeModal('modal-comm')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>% de Comissão Padrão</label>
+        <input type="number" id="global-comm-input" step="0.1" placeholder="Ex: 1.5">
+      </div>
+      <p style="font-size:12px;color:var(--muted)">Este valor será aplicado como padrão para todos os leads sem comissão individualizada.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-comm')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveGlobalComm()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LEAD -->
+<div class="modal-overlay" id="modal-lead">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modal-lead-title">Novo Lead</h3><button class="modal-close" onclick="closeModal('modal-lead')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Nome Completo *</label><input type="text" id="l-nome" placeholder="João da Silva"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Telefone</label><input type="tel" id="l-tel" placeholder="(11) 9 0000-0000"></div>
+        <div class="form-group"><label>E-mail</label><input type="email" id="l-email" placeholder="joao@email.com"></div>
+      </div>
+      <div class="form-group">
+        <label>Empreendimento</label>
+        <select id="l-emp"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Valor do Imóvel (R$)</label><input type="number" id="l-valor" placeholder="250000"></div>
+        <div class="form-group"><label>% Comissão (deixe vazio p/ global)</label><input type="number" id="l-comm" step="0.1" placeholder="1.5"></div>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="l-status">
+          <option value="0">Atendimento Inicial</option>
+          <option value="1">Mandou Documentos</option>
+          <option value="2">Foi Aprovado</option>
+          <option value="3">Assinou na Caixa</option>
+        </select>
+      </div>
+      <div class="section-title" style="margin-top:16px;font-size:11px">Taxas Individuais do Cliente</div>
+      <div class="form-row">
+        <div class="form-group"><label>% ITBI</label><input type="number" id="l-itbi" step="0.1" placeholder="2"></div>
+        <div class="form-group"><label>% Cartório</label><input type="number" id="l-cart" step="0.1" placeholder="1"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>% Entrada</label><input type="number" id="l-entrada" step="0.1" placeholder="5"></div>
+        <div class="form-group"><label>% Enc. Obras</label><input type="number" id="l-enc" step="0.1" placeholder="1"></div>
+      </div>
+      <div class="form-group"><label>Abertura de Conta (R$)</label><input type="number" id="l-aber" placeholder="25"></div>
+      <div class="form-group"><label>Data de Entrada</label><input type="date" id="l-data"></div>
+      <div class="form-group"><label>Observações</label><textarea id="l-obs" rows="2" placeholder="Observações..."></textarea></div>
+      <input type="hidden" id="l-edit-id" value="">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-lead')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveLead()">Salvar Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPREENDIMENTO -->
+<div class="modal-overlay" id="modal-emp">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modal-emp-title">Novo Empreendimento</h3><button class="modal-close" onclick="closeModal('modal-emp')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Construtora *</label><input type="text" id="e-const" placeholder="Nome da construtora"></div>
+      <div class="form-group"><label>Empreendimento *</label><input type="text" id="e-nome" placeholder="Nome do empreendimento"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Valor Mínimo (R$)</label><input type="number" id="e-vmin" placeholder="150000"></div>
+        <div class="form-group"><label>Valor Máximo (R$)</label><input type="number" id="e-vmax" placeholder="350000"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Data Prevista Entrega</label><input type="date" id="e-data"></div>
+        <div class="form-group"><label>% Evolução da Obra</label><input type="number" id="e-evolucao" min="0" max="100" placeholder="45"></div>
+      </div>
+      <div class="form-group"><label>% Comissão neste Empreendimento</label><input type="number" id="e-comm" step="0.1" placeholder="1.5"></div>
+      <div class="form-group">
+        <div class="checkbox-row">
+          <input type="checkbox" id="e-caixa">
+          <label for="e-caixa">✅ Está assinando na Caixa atualmente</label>
+        </div>
+      </div>
+      <div class="form-group"><label>Observações</label><textarea id="e-obs" rows="2" placeholder="Endereço, tipo de imóvel, faixa MCMV..."></textarea></div>
+      <input type="hidden" id="e-edit-id" value="">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-emp')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEmp()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SCRIPT -->
+<div class="modal-overlay" id="modal-script">
+  <div class="modal">
+    <div class="modal-head"><h3>Novo Script</h3><button class="modal-close" onclick="closeModal('modal-script')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Título</label><input type="text" id="s-titulo" placeholder="Ex: Abordagem inicial WhatsApp"></div>
+      <div class="form-group"><label>Categoria</label>
+        <select id="s-cat">
+          <option value="abordagem">Abordagem</option>
+          <option value="qualificacao">Qualificação</option>
+          <option value="fechamento">Fechamento</option>
+          <option value="objecao">Objeção</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Script</label><textarea id="s-texto" rows="6" placeholder="Escreva o script aqui..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-script')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveScript()">Salvar Script</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let state = {
+  leads: [],
+  empreendimentos: [],
+  scripts: [],
+  globalComm: 1.5,
+  metas: { mensal: 0, contatos: 0, vendas: 0 },
+  charts: {}
+};
+
+// Load from localStorage
+function loadState() {
+  try {
+    const s = localStorage.getItem('teles_crm');
+    if (s) state = { ...state, ...JSON.parse(s) };
+  } catch(e) {}
+}
+function saveState() {
+  try { localStorage.setItem('teles_crm', JSON.stringify(state)); } catch(e) {}
+}
+loadState();
+
+// Default scripts
+if (!state.scripts.length) {
+  state.scripts = [
+    { id: 1, titulo: 'Abordagem Inicial — WhatsApp', cat: 'abordagem', texto: 'Olá [Nome]! Tudo bem? 😊\n\nSou [Seu Nome], especialista em imóveis pelo Minha Casa Minha Vida.\n\nTenho uma oportunidade incrível que pode ser perfeita para você conquistar a casa própria com condições especiais da Caixa Econômica.\n\nPosso te mostrar em 5 minutinhos? 🏡' },
+    { id: 2, titulo: 'Qualificação — Renda e Perfil', cat: 'qualificacao', texto: 'Para encontrar o melhor empreendimento para você, preciso de algumas informações rápidas:\n\n1️⃣ Qual é a sua renda familiar mensal? (pode ser individual ou soma da família)\n2️⃣ Você é casado(a) ou solteiro(a)?\n3️⃣ Já tem algum imóvel no seu nome?\n4️⃣ Tem FGTS para usar como entrada?\n5️⃣ Está em qual cidade/bairro?' },
+    { id: 3, titulo: 'Contorno de Objeção — "Não tenho entrada"', cat: 'objecao', texto: 'Entendo sua preocupação! Mas sabia que pelo Minha Casa Minha Vida a entrada pode ser muito menor do que você imagina?\n\nAlém disso, você pode usar o seu FGTS para cobrir a entrada — e em muitos casos, cobrindo 100% dela!\n\nPosso fazer uma simulação gratuita pra você ver quanto ficaria por mês? Sem compromisso nenhum 😊' },
+    { id: 4, titulo: 'Fechamento — Convite para Visita', cat: 'fechamento', texto: 'Que ótima notícia sobre a sua aprovação! 🎉\n\nAgora é o momento mais importante: assinar o contrato na Caixa e garantir as suas chaves!\n\nJá separei todos os documentos necessários. Você consegue comparecer [dia e horário] na agência?\n\nEssa etapa é rápida e você sai de lá com tudo encaminhado para a sua casa própria! 🏡🔑' },
+  ];
+}
+
+// ===== NAVIGATION =====
+const pageNames = {
+  dashboard:'Dashboard', leads:'Leads', funil:'Funil de Atendimento',
+  projecao:'Projeção de Comissão', empreendimentos:'Empreendimentos',
+  scripts:'Scripts e Metas', calc:'Calculadora'
+};
+function gotoPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.mn-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => { if(n.getAttribute('onclick')?.includes("'"+id+"'")) n.classList.add('active'); });
+  document.querySelectorAll('.mn-item').forEach(n => { if(n.getAttribute('onclick')?.includes("'"+id+"'")) n.classList.add('active'); });
+  document.getElementById('topbar-title').textContent = pageNames[id] || id;
+  if (id === 'dashboard') { renderDashboard(); }
+  if (id === 'leads') renderLeads();
+  if (id === 'funil') renderFunil();
+  if (id === 'projecao') renderProjecao();
+  if (id === 'empreendimentos') renderEmps();
+  if (id === 'scripts') renderScripts();
+}
+
+// ===== UTILS =====
+function fmt(v) { return 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:0,maximumFractionDigits:0}); }
+function fmtPct(v) { return Number(v||0).toFixed(1) + '%'; }
+function uid() { return Date.now() + Math.random().toString(36).slice(2); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+// ===== GLOBAL COMM =====
+function openGlobalComm() {
+  document.getElementById('global-comm-input').value = state.globalComm;
+  openModal('modal-comm');
+}
+function saveGlobalComm() {
+  state.globalComm = parseFloat(document.getElementById('global-comm-input').value) || 1.5;
+  document.getElementById('meta-comm-global').value = state.globalComm;
+  saveState(); closeModal('modal-comm');
+  showToast('Comissão global atualizada!');
+  renderDashboard(); renderProjecao();
+}
+function setGlobalComm(v) {
+  state.globalComm = parseFloat(v) || 1.5;
+  saveState(); renderDashboard(); renderProjecao();
+}
+
+// ===== LEADS =====
+function openLeadModal(editId) {
+  const fields = ['nome','tel','email','emp','valor','comm','status','itbi','cart','entrada','enc','aber','data','obs'];
+  fields.forEach(f => { const el = document.getElementById('l-'+f); if(el) el.value = ''; });
+  document.getElementById('l-status').value = '0';
+  document.getElementById('l-edit-id').value = '';
+  document.getElementById('modal-lead-title').textContent = editId ? 'Editar Lead' : 'Novo Lead';
+
+  // populate empreendimento select
+  const sel = document.getElementById('l-emp');
+  sel.innerHTML = '<option value="">Selecione...</option>';
+  state.empreendimentos.forEach(e => {
+    const o = document.createElement('option');
+    o.value = e.nome; o.textContent = e.nome + ' — ' + e.construtora;
+    sel.appendChild(o);
+  });
+
+  if (editId) {
+    const lead = state.leads.find(l => l.id === editId);
+    if (lead) {
+      document.getElementById('l-nome').value = lead.nome||'';
+      document.getElementById('l-tel').value = lead.tel||'';
+      document.getElementById('l-email').value = lead.email||'';
+      document.getElementById('l-emp').value = lead.empreendimento||'';
+      document.getElementById('l-valor').value = lead.valor||'';
+      document.getElementById('l-comm').value = lead.comm||'';
+      document.getElementById('l-status').value = lead.status||0;
+      document.getElementById('l-itbi').value = lead.itbi||'';
+      document.getElementById('l-cart').value = lead.cart||'';
+      document.getElementById('l-entrada').value = lead.entrada||'';
+      document.getElementById('l-enc').value = lead.enc||'';
+      document.getElementById('l-aber').value = lead.aber||'';
+      document.getElementById('l-data').value = lead.data||'';
+      document.getElementById('l-obs').value = lead.obs||'';
+      document.getElementById('l-edit-id').value = editId;
+    }
+  } else {
+    document.getElementById('l-data').value = new Date().toISOString().split('T')[0];
+  }
+  openModal('modal-lead');
+}
+function saveLead() {
+  const nome = document.getElementById('l-nome').value.trim();
+  if (!nome) { showToast('Nome é obrigatório!'); return; }
+  const editId = document.getElementById('l-edit-id').value;
+  const lead = {
+    id: editId || uid(),
+    nome, tel: document.getElementById('l-tel').value,
+    email: document.getElementById('l-email').value,
+    empreendimento: document.getElementById('l-emp').value,
+    valor: parseFloat(document.getElementById('l-valor').value)||0,
+    comm: parseFloat(document.getElementById('l-comm').value)||null,
+    status: parseInt(document.getElementById('l-status').value)||0,
+    itbi: parseFloat(document.getElementById('l-itbi').value)||2,
+    cart: parseFloat(document.getElementById('l-cart').value)||1,
+    entrada: parseFloat(document.getElementById('l-entrada').value)||5,
+    enc: parseFloat(document.getElementById('l-enc').value)||1,
+    aber: parseFloat(document.getElementById('l-aber').value)||25,
+    data: document.getElementById('l-data').value,
+    obs: document.getElementById('l-obs').value,
+  };
+  if (editId) {
+    state.leads = state.leads.map(l => l.id === editId ? lead : l);
+  } else {
+    state.leads.push(lead);
+  }
+  saveState(); closeModal('modal-lead');
+  renderLeads(); renderFunil(); renderProjecao(); renderDashboard();
+  showToast(editId ? 'Lead atualizado!' : 'Lead adicionado!');
+}
+function deleteLead(id) {
+  if (!confirm('Excluir este lead?')) return;
+  state.leads = state.leads.filter(l => l.id !== id);
+  saveState(); renderLeads(); renderFunil(); renderProjecao(); renderDashboard();
+  showToast('Lead removido.');
+}
+
+let leadFilter = '';
+function filterLeads(v) { leadFilter = v.toLowerCase(); renderLeads(); }
+
+const STATUS_LABELS = ['Atend. Inicial','Mandou Docs','Foi Aprovado','Assinou na Caixa'];
+function renderLeads() {
+  const tbody = document.getElementById('leads-tbody');
+  const leads = state.leads.filter(l =>
+    !leadFilter || l.nome.toLowerCase().includes(leadFilter) ||
+    (l.empreendimento||'').toLowerCase().includes(leadFilter) ||
+    (l.email||'').toLowerCase().includes(leadFilter)
+  );
+  if (!leads.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Nenhum lead encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = leads.map(l => `
+    <tr>
+      <td><b>${l.nome}</b></td>
+      <td>${l.tel||'—'}</td>
+      <td style="font-size:11px">${l.email||'—'}</td>
+      <td>${l.empreendimento||'—'}</td>
+      <td>${l.valor ? fmt(l.valor) : '—'}</td>
+      <td><span class="status status-${l.status}">${STATUS_LABELS[l.status]}</span></td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="openLeadModal('${l.id}')">✏</button>
+        <button class="btn btn-danger" style="padding:4px 8px;font-size:11px" onclick="deleteLead('${l.id}')">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ===== FUNIL =====
+let funilFilter = -1;
+function filterFunil(status) {
+  funilFilter = funilFilter === status ? -1 : status;
+  document.querySelectorAll('.funnel-card').forEach((c,i) => {
+    c.classList.toggle('active-funnel', i === funilFilter || funilFilter === -1);
+  });
+  renderFunilTable();
+}
+function renderFunil() {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const weekAgo = new Date(now - 7*864e5).toISOString().split('T')[0];
+  const monthAgo = new Date(now - 30*864e5).toISOString().split('T')[0];
+  const m3ago = new Date(now - 90*864e5).toISOString().split('T')[0];
+  const m6ago = new Date(now - 180*864e5).toISOString().split('T')[0];
+  const y1ago = new Date(now - 365*864e5).toISOString().split('T')[0];
+
+  const total = state.leads.length;
+  [0,1,2,3].forEach(s => {
+    const c = state.leads.filter(l => l.status === s).length;
+    document.getElementById('fn-'+s).textContent = c;
+    document.getElementById('fp-'+s).textContent = total ? ((c/total*100).toFixed(1)+'%') : '0%';
+  });
+  document.getElementById('funil-total').textContent = total;
+  document.getElementById('funil-hoje').textContent = state.leads.filter(l => l.data === today).length;
+  document.getElementById('funil-semana').textContent = state.leads.filter(l => l.data >= weekAgo).length;
+  document.getElementById('funil-mes').textContent = state.leads.filter(l => l.data >= monthAgo).length;
+  document.getElementById('funil-3m').textContent = state.leads.filter(l => l.data >= m3ago).length;
+  document.getElementById('funil-6m').textContent = state.leads.filter(l => l.data >= m6ago).length;
+  document.getElementById('funil-1a').textContent = state.leads.filter(l => l.data >= y1ago).length;
+  renderFunilTable();
+}
+function renderFunilTable() {
+  const tbody = document.getElementById('funil-tbody');
+  const leads = funilFilter === -1 ? state.leads : state.leads.filter(l => l.status === funilFilter);
+  document.getElementById('funil-table-title').textContent = funilFilter === -1 ? 'Todos os Leads' : STATUS_LABELS[funilFilter];
+  if (!leads.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Nenhum lead neste status.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = leads.map(l => `
+    <tr>
+      <td><b>${l.nome}</b></td>
+      <td>${l.empreendimento||'—'}</td>
+      <td>${l.valor ? fmt(l.valor) : '—'}</td>
+      <td><span class="status status-${l.status}">${STATUS_LABELS[l.status]}</span></td>
+      <td style="font-size:11px">${l.data||'—'}</td>
+      <td>
+        <select style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:11px;outline:none" onchange="changeStatus('${l.id}',this.value)">
+          ${[0,1,2,3].map(s=>`<option value="${s}" ${l.status===s?'selected':''}>${STATUS_LABELS[s]}</option>`).join('')}
+        </select>
+      </td>
+    </tr>
+  `).join('');
+}
+function changeStatus(id, val) {
+  state.leads = state.leads.map(l => l.id === id ? {...l, status: parseInt(val)} : l);
+  saveState(); renderFunil(); renderDashboard(); renderProjecao();
+  showToast('Status atualizado!');
+}
+
+// ===== PROJEÇÃO =====
+function renderProjecao() {
+  const tbody = document.getElementById('proj-tbody');
+  const leads = state.leads.filter(l => l.valor > 0);
+  let totalProj = 0, totalConf = 0, pcts = [];
+  if (!leads.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Nenhum lead com valor cadastrado.</td></tr>';
+    document.getElementById('proj-total').textContent = 'R$ 0';
+    document.getElementById('proj-confirmada').textContent = 'R$ 0';
+    document.getElementById('proj-media').textContent = '0%';
+    return;
+  }
+  tbody.innerHTML = leads.map(l => {
+    const pct = l.comm || state.globalComm;
+    const comm = l.valor * pct / 100;
+    totalProj += comm;
+    pcts.push(pct);
+    if (l.status === 3) totalConf += comm;
+    // Check if empreendimento is assinando
+    const emp = state.empreendimentos.find(e => e.nome === l.empreendimento);
+    const empComm = emp ? (emp.comm || state.globalComm) : (l.comm || state.globalComm);
+    return `<tr>
+      <td><b>${l.nome}</b></td>
+      <td>${l.empreendimento||'—'}</td>
+      <td>${fmt(l.valor)}</td>
+      <td style="color:var(--accent)">${fmtPct(pct)}</td>
+      <td style="color:var(--green);font-weight:600">${fmt(comm)}</td>
+      <td><span class="status status-${l.status}">${STATUS_LABELS[l.status]}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('proj-total').textContent = fmt(totalProj);
+  document.getElementById('proj-confirmada').textContent = fmt(totalConf);
+  const avg = pcts.length ? pcts.reduce((a,b)=>a+b,0)/pcts.length : 0;
+  document.getElementById('proj-media').textContent = fmtPct(avg);
+}
+
+// ===== EMPREENDIMENTOS =====
+function openEmpModal(editId) {
+  ['const','nome','vmin','vmax','data','evolucao','comm','obs'].forEach(f => {
+    const el = document.getElementById('e-'+f); if(el) el.value = '';
+  });
+  document.getElementById('e-caixa').checked = false;
+  document.getElementById('e-edit-id').value = '';
+  document.getElementById('modal-emp-title').textContent = editId ? 'Editar Empreendimento' : 'Novo Empreendimento';
+  if (editId) {
+    const e = state.empreendimentos.find(x => x.id === editId);
+    if (e) {
+      document.getElementById('e-const').value = e.construtora||'';
+      document.getElementById('e-nome').value = e.nome||'';
+      document.getElementById('e-vmin').value = e.vmin||'';
+      document.getElementById('e-vmax').value = e.vmax||'';
+      document.getElementById('e-data').value = e.data||'';
+      document.getElementById('e-evolucao').value = e.evolucao||'';
+      document.getElementById('e-comm').value = e.comm||'';
+      document.getElementById('e-caixa').checked = !!e.caixa;
+      document.getElementById('e-obs').value = e.obs||'';
+      document.getElementById('e-edit-id').value = editId;
+    }
+  }
+  openModal('modal-emp');
+}
+function saveEmp() {
+  const nome = document.getElementById('e-nome').value.trim();
+  const construtora = document.getElementById('e-const').value.trim();
+  if (!nome || !construtora) { showToast('Construtora e Empreendimento são obrigatórios!'); return; }
+  const editId = document.getElementById('e-edit-id').value;
+  const emp = {
+    id: editId || uid(),
+    construtora, nome,
+    vmin: parseFloat(document.getElementById('e-vmin').value)||0,
+    vmax: parseFloat(document.getElementById('e-vmax').value)||0,
+    data: document.getElementById('e-data').value,
+    evolucao: parseFloat(document.getElementById('e-evolucao').value)||0,
+    comm: parseFloat(document.getElementById('e-comm').value)||null,
+    caixa: document.getElementById('e-caixa').checked,
+    obs: document.getElementById('e-obs').value,
+  };
+  if (editId) {
+    state.empreendimentos = state.empreendimentos.map(e => e.id === editId ? emp : e);
+  } else {
+    state.empreendimentos.push(emp);
+  }
+  saveState(); closeModal('modal-emp'); renderEmps(); renderDashboard();
+  showToast(editId ? 'Empreendimento atualizado!' : 'Empreendimento adicionado!');
+}
+function deleteEmp(id) {
+  if (!confirm('Excluir este empreendimento?')) return;
+  state.empreendimentos = state.empreendimentos.filter(e => e.id !== id);
+  saveState(); renderEmps(); showToast('Empreendimento removido.');
+}
+function renderEmps() {
+  const grid = document.getElementById('emp-grid');
+  if (!state.empreendimentos.length) {
+    grid.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><p>Nenhum empreendimento cadastrado.<br>Clique em <b>+ Adicionar</b> para começar.</p></div>';
+    return;
+  }
+  // Group by construtora
+  const groups = {};
+  state.empreendimentos.forEach(e => {
+    if (!groups[e.construtora]) groups[e.construtora] = [];
+    groups[e.construtora].push(e);
+  });
+  grid.innerHTML = Object.entries(groups).map(([const_, emps]) => `
+    <div style="grid-column:1/-1;font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:8px;margin-bottom:4px">🏗 ${const_}</div>
+    ${emps.map(e => `
+    <div class="emp-card">
+      <div class="emp-name">${e.nome}</div>
+      <div class="emp-const">${e.construtora}</div>
+      <div class="emp-row"><span class="emp-key">Valor</span><span>${e.vmin ? fmt(e.vmin) + (e.vmax ? ' – ' + fmt(e.vmax) : '') : '—'}</span></div>
+      <div class="emp-row"><span class="emp-key">Entrega</span><span>${e.data||'—'}</span></div>
+      <div class="emp-row"><span class="emp-key">Comissão</span><span style="color:var(--accent)">${e.comm ? fmtPct(e.comm) : fmtPct(state.globalComm)+' (global)'}</span></div>
+      <div class="emp-row"><span class="emp-key">Evolução</span><span>${e.evolucao||0}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${e.evolucao||0}%"></div></div>
+      <span class="emp-tag ${e.caixa ? 'assinando' : 'nao'}">${e.caixa ? '✅ Assinando na Caixa' : '⏸ Não assinando'}</span>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="openEmpModal('${e.id}')">✏ Editar</button>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteEmp('${e.id}')">✕</button>
+      </div>
+    </div>
+    `).join('')}
+  `).join('');
+}
+
+// ===== SCRIPTS =====
+function openScriptModal() { openModal('modal-script'); }
+function saveScript() {
+  const titulo = document.getElementById('s-titulo').value.trim();
+  const texto = document.getElementById('s-texto').value.trim();
+  if (!titulo || !texto) { showToast('Preencha título e script!'); return; }
+  state.scripts.push({
+    id: uid(),
+    titulo,
+    cat: document.getElementById('s-cat').value,
+    texto
+  });
+  saveState(); closeModal('modal-script'); renderScripts(); showToast('Script salvo!');
+}
+function deleteScript(id) {
+  state.scripts = state.scripts.filter(s => s.id !== id);
+  saveState(); renderScripts(); showToast('Script removido.');
+}
+function renderScripts() {
+  const list = document.getElementById('scripts-list');
+  if (!state.scripts.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px"><p>Nenhum script cadastrado.</p></div>';
+    return;
+  }
+  list.innerHTML = state.scripts.map(s => `
+    <div class="script-card">
+      <span class="script-tag ${s.cat}">${s.cat.toUpperCase()}</span>
+      <div style="font-weight:600;margin-bottom:6px">${s.titulo}</div>
+      <div class="script-text">${s.texto}</div>
+      <div style="margin-top:8px;display:flex;gap:6px">
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="copyScript('${s.id}')">📋 Copiar</button>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteScript('${s.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Metas
+  document.getElementById('meta-comm-global').value = state.globalComm;
+  if (state.metas) {
+    document.getElementById('meta-mensal').value = state.metas.mensal||'';
+    document.getElementById('meta-contatos').value = state.metas.contatos||'';
+    document.getElementById('meta-vendas').value = state.metas.vendas||'';
+  }
+  document.getElementById('meta-total-leads').textContent = state.leads.length;
+  const vendidosNoMes = state.leads.filter(l => l.status === 3 && l.data >= new Date(new Date()-30*864e5).toISOString().split('T')[0]).length;
+  document.getElementById('meta-vendas-real').textContent = vendidosNoMes;
+  // Comissão realizada
+  const commReal = state.leads.filter(l => l.status === 3).reduce((acc,l) => acc + l.valor * (l.comm || state.globalComm) / 100, 0);
+  document.getElementById('meta-realizado').textContent = fmt(commReal);
+  const metaMensal = parseFloat(state.metas?.mensal) || 1;
+  const pct = Math.min(100, (commReal / metaMensal) * 100);
+  document.getElementById('meta-bar').style.width = pct + '%';
+  document.getElementById('meta-pct-label').textContent = pct.toFixed(1) + '% da meta';
+}
+function saveMetas() {
+  state.metas = {
+    mensal: parseFloat(document.getElementById('meta-mensal').value)||0,
+    contatos: parseFloat(document.getElementById('meta-contatos').value)||0,
+    vendas: parseFloat(document.getElementById('meta-vendas').value)||0,
+  };
+  saveState();
+}
+function copyScript(id) {
+  const s = state.scripts.find(x => x.id == id);
+  if (s) { navigator.clipboard?.writeText(s.texto).then(() => showToast('Script copiado!')).catch(() => showToast('Copie manualmente.')); }
+}
+
+// ===== CALCULATOR =====
+let calcState = { expr:'', val:'0', op:null, prev:null, reset:false };
+function calcNum(n) {
+  if (calcState.reset) { calcState.val = n; calcState.reset = false; }
+  else calcState.val = calcState.val === '0' ? n : calcState.val + n;
+  updateCalc();
+}
+function calcDot() {
+  if (calcState.reset) { calcState.val = '0.'; calcState.reset = false; }
+  else if (!calcState.val.includes('.')) calcState.val += '.';
+  updateCalc();
+}
+function calcOp(op) {
+  calcState.prev = parseFloat(calcState.val);
+  calcState.op = op; calcState.reset = true;
+  const ops = {'+':'+', '-':'−', '*':'×', '/':'÷'};
+  calcState.expr = calcState.val + ' ' + ops[op];
+  updateCalc();
+}
+function calcEq() {
+  if (!calcState.op || calcState.prev === null) return;
+  const cur = parseFloat(calcState.val);
+  let res;
+  if (calcState.op==='+') res=calcState.prev+cur;
+  else if (calcState.op==='-') res=calcState.prev-cur;
+  else if (calcState.op==='*') res=calcState.prev*cur;
+  else if (calcState.op==='/') res=cur===0?'Erro':calcState.prev/cur;
+  calcState.expr = '';
+  calcState.val = typeof res === 'number' ? (Number.isInteger(res)?res.toString():parseFloat(res.toFixed(8)).toString()) : res;
+  calcState.op = null; calcState.prev = null; calcState.reset = true;
+  updateCalc();
+}
+function calcAC() { calcState = { expr:'', val:'0', op:null, prev:null, reset:false }; updateCalc(); }
+function calcToggle() { if(calcState.val!=='0') calcState.val=(parseFloat(calcState.val)*-1).toString(); updateCalc(); }
+function calcPct() { calcState.val=(parseFloat(calcState.val)/100).toString(); updateCalc(); }
+function updateCalc() {
+  document.getElementById('calc-expr').textContent = calcState.expr;
+  document.getElementById('calc-val').textContent = Number(calcState.val).toLocaleString('pt-BR',{maximumFractionDigits:8}) || calcState.val;
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+
+  const leads = state.leads;
+  const totalVGV = leads.reduce((a,l) => a + (l.valor||0), 0);
+  const totalComm = leads.reduce((a,l) => a + (l.valor||0) * ((l.comm||state.globalComm)/100), 0);
+  const totalITBI = leads.reduce((a,l) => a + (l.valor||0) * ((l.itbi||2)/100), 0);
+  const totalCart = leads.reduce((a,l) => a + (l.valor||0) * ((l.cart||1)/100), 0);
+  const totalEntrada = leads.reduce((a,l) => a + (l.valor||0) * ((l.entrada||5)/100), 0);
+  const totalEnc = leads.reduce((a,l) => a + (l.valor||0) * ((l.enc||1)/100), 0);
+  const totalAber = leads.reduce((a,l) => a + (l.aber||25), 0);
+  const vendidos = leads.filter(l => l.status === 3);
+  const totalVendas = vendidos.reduce((a,l) => a + (l.valor||0), 0);
+
+  document.getElementById('kpi-vgv').textContent = fmt(totalVGV);
+  document.getElementById('kpi-comm').textContent = fmt(totalComm);
+  document.getElementById('kpi-comm-pct').textContent = totalVGV ? fmtPct(totalComm/totalVGV*100) + ' do VGV' : '0% do VGV';
+  document.getElementById('kpi-itbi').textContent = fmt(totalITBI);
+  document.getElementById('kpi-cart').textContent = fmt(totalCart);
+  document.getElementById('kpi-entrada').textContent = fmt(totalEntrada);
+  document.getElementById('kpi-enc').textContent = fmt(totalEnc);
+  document.getElementById('kpi-aber').textContent = fmt(totalAber);
+  document.getElementById('kpi-vendas').textContent = fmt(totalVendas);
+  document.getElementById('kpi-vendas-count').textContent = vendidos.length + ' contrato(s)';
+
+  renderCharts();
+}
+
+// ===== CHARTS =====
+function destroyChart(id) {
+  if (state.charts[id]) { state.charts[id].destroy(); delete state.charts[id]; }
+}
+function renderCharts() {
+  const leads = state.leads;
+  const counts = [0,1,2,3].map(s => leads.filter(l => l.status === s).length);
+
+  // Pizza
+  destroyChart('pizza');
+  const ctxP = document.getElementById('chartPizza');
+  if (ctxP) {
+    state.charts.pizza = new Chart(ctxP, {
+      type:'doughnut',
+      data:{
+        labels: STATUS_LABELS,
+        datasets:[{data: counts, backgroundColor:['#6b7280','#3b82f6','#8b5cf6','#2ecc71'], borderWidth:0}]
+      },
+      options:{plugins:{legend:{position:'bottom',labels:{color:'#9ca3af',font:{size:11}}}},cutout:'65%'}
+    });
+  }
+
+  // Barras — top leads por valor
+  destroyChart('barras');
+  const top = [...leads].filter(l=>l.valor).sort((a,b)=>b.valor-a.valor).slice(0,8);
+  const ctxB = document.getElementById('chartBarras');
+  if (ctxB) {
+    state.charts.barras = new Chart(ctxB, {
+      type:'bar',
+      data:{
+        labels: top.map(l=>l.nome.split(' ')[0]),
+        datasets:[{
+          label:'Valor Imóvel',
+          data: top.map(l=>l.valor),
+          backgroundColor:'rgba(201,168,76,0.6)',
+          borderColor:'#c9a84c', borderWidth:1, borderRadius:4
+        }]
+      },
+      options:{
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#1e2430'}},
+          y:{ticks:{color:'#6b7280',font:{size:10},callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'#1e2430'}}
+        }
+      }
+    });
+  }
+
+  // VGV line (default 1m)
+  renderVGVChart('1m');
+  // Ganhos line (default 1m)
+  renderGainChart('1m');
+}
+
+function genDateLabels(period, startDate, endDate) {
+  const now = new Date();
+  let start, labels=[], data=[];
+  if (period==='custom' && startDate && endDate) {
+    start = new Date(startDate);
+    const end = new Date(endDate);
+    const diff = (end-start)/(1000*3600*24);
+    const step = Math.max(1, Math.floor(diff/10));
+    for(let d=new Date(start); d<=end; d.setDate(d.getDate()+step)) {
+      labels.push(d.toLocaleDateString('pt-BR',{month:'short',day:'numeric'}));
+    }
+    return {labels, start, end};
+  }
+  const periods = {'1m':30,'3m':90,'6m':180,'1a':365};
+  const days = periods[period]||30;
+  start = new Date(now - days*864e5);
+  const step = Math.max(1, Math.floor(days/12));
+  for(let d=new Date(start); d<=now; d.setDate(d.getDate()+step)) {
+    labels.push(d.toLocaleDateString('pt-BR',{month:'short',day:'numeric'}));
+  }
+  return {labels, start, end:now};
+}
+
+function renderVGVChart(period, startDate, endDate) {
+  destroyChart('vgv');
+  const {labels, start, end} = genDateLabels(period, startDate, endDate);
+  // Simulate cumulative VGV — real data per date
+  const leads = state.leads.filter(l => l.valor && l.data);
+  const dataPoints = labels.map((lbl, i) => {
+    const ratio = (i+1)/labels.length;
+    // Leads up to this point proportionally
+    return Math.round(leads.reduce((a,l) => a + (l.valor||0), 0) * ratio * (0.6 + Math.random()*0.4));
+  });
+  const ctx = document.getElementById('chartVGV');
+  if (!ctx) return;
+  state.charts.vgv = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'VGV (R$)',
+        data: dataPoints,
+        borderColor:'#c9a84c',
+        backgroundColor:'rgba(201,168,76,0.1)',
+        tension:.4, fill:true, pointRadius:3, pointBackgroundColor:'#c9a84c'
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#1e2430'}},
+        y:{ticks:{color:'#6b7280',font:{size:10},callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'#1e2430'}}
+      }
+    }
+  });
+}
+
+function renderGainChart(period, startDate, endDate) {
+  destroyChart('ganhos');
+  const {labels} = genDateLabels(period, startDate, endDate);
+  const vendidos = state.leads.filter(l => l.status===3);
+  const totalComm = vendidos.reduce((a,l) => a + (l.valor||0) * ((l.comm||state.globalComm)/100), 0);
+  const dataR$ = labels.map((_,i) => Math.round(totalComm * (i+1)/labels.length * (0.5+Math.random()*0.5)));
+  const dataPct = labels.map((_,i) => parseFloat(((i+1)/labels.length * state.globalComm * (0.6+Math.random()*0.4)).toFixed(2)));
+  const ctx = document.getElementById('chartGanhos');
+  if (!ctx) return;
+  state.charts.ganhos = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Ganhos (R$)', data:dataR$, borderColor:'#2ecc71', backgroundColor:'rgba(46,204,113,0.08)', tension:.4, fill:true, pointRadius:3, pointBackgroundColor:'#2ecc71', yAxisID:'y'},
+        {label:'% Evolução', data:dataPct, borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.08)', tension:.4, fill:true, pointRadius:3, pointBackgroundColor:'#3b82f6', yAxisID:'y1'}
+      ]
+    },
+    options:{
+      plugins:{legend:{labels:{color:'#9ca3af',font:{size:11}}}},
+      scales:{
+        x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#1e2430'}},
+        y:{ticks:{color:'#4ade80',font:{size:10},callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'#1e2430'}},
+        y1:{position:'right',ticks:{color:'#60a5fa',font:{size:10},callback:v=>v+'%'},grid:{drawOnChartArea:false}}
+      }
+    }
+  });
+}
+
+let vgvPeriodCurrent = '1m', gainPeriodCurrent = '1m';
+
+function setVGVPeriod(p, btn) {
+  vgvPeriodCurrent = p;
+  document.querySelectorAll('#page-dashboard .chart-box')[2]?.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('vgv-custom-dates').style.display = p==='custom' ? 'flex':'none';
+  if (p !== 'custom') renderVGVChart(p);
+}
+function applyVGVCustom() {
+  const s = document.getElementById('vgv-date-start').value;
+  const e = document.getElementById('vgv-date-end').value;
+  if (s && e) renderVGVChart('custom', s, e);
+}
+function setGainPeriod(p, btn) {
+  gainPeriodCurrent = p;
+  document.querySelectorAll('#page-dashboard .chart-box')[3]?.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('gain-custom-dates').style.display = p==='custom' ? 'flex':'none';
+  if (p !== 'custom') renderGainChart(p);
+}
+function applyGainCustom() {
+  const s = document.getElementById('gain-date-start').value;
+  const e = document.getElementById('gain-date-end').value;
+  if (s && e) renderGainChart('custom', s, e);
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  renderDashboard();
+  renderLeads();
+  renderFunil();
+  renderProjecao();
+  renderEmps();
+  renderScripts();
+  // Load metas
+  if (state.metas) {
+    document.getElementById('meta-mensal').value = state.metas.mensal||'';
+    document.getElementById('meta-contatos').value = state.metas.contatos||'';
+    document.getElementById('meta-vendas').value = state.metas.vendas||'';
+  }
+  document.getElementById('meta-comm-global').value = state.globalComm;
+});
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
